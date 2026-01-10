@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, TextInput, Alert, Keyboard, Platform, PermissionsAndroid, FlatList, Linking, AppState, Modal } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, TextInput, Alert, Keyboard, Platform, PermissionsAndroid, FlatList, Linking, AppState, Modal, Animated } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker, Circle } from 'react-native-maps';
 import Svg, { Path, Circle as SvgCircle, Rect, Line } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,6 +15,10 @@ const MapScreen = ({ navigation }: any) => {
     const [showFuture, setShowFuture] = useState(false);
     const [confirmModalVisible, setConfirmModalVisible] = useState(false);
     const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [isBlinking, setIsBlinking] = useState(false);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const blinkAnim = useRef(new Animated.Value(1)).current;
+    const transitionAnim = useRef(new Animated.Value(0)).current;
     const mapRef = useRef<MapView>(null);
 
     useEffect(() => {
@@ -205,15 +209,74 @@ const MapScreen = ({ navigation }: any) => {
 
     const handleToggleFuture = () => {
         if (showFuture) {
-            setShowFuture(false);
+            // Going back to current hotspots
+            triggerTransition(() => setShowFuture(false));
         } else {
             setConfirmModalVisible(true);
         }
     };
 
+    const triggerTransition = (onComplete?: () => void) => {
+        setIsTransitioning(true);
+        transitionAnim.setValue(0);
+
+        Animated.sequence([
+            // Fade in white overlay
+            Animated.timing(transitionAnim, {
+                toValue: 1,
+                duration: 250,
+                useNativeDriver: true,
+            }),
+            // Fade out white overlay
+            Animated.timing(transitionAnim, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true,
+            }),
+        ]).start(() => {
+            setIsTransitioning(false);
+            if (onComplete) onComplete();
+        });
+    };
+
+    const triggerBlink = () => {
+        setIsBlinking(true);
+        blinkAnim.setValue(1);
+
+        Animated.sequence([
+            Animated.timing(blinkAnim, {
+                toValue: 0.3,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+            Animated.timing(blinkAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+            Animated.timing(blinkAnim, {
+                toValue: 0.3,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+            Animated.timing(blinkAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+        ]).start(() => {
+            setIsBlinking(false);
+        });
+    };
+
     const confirmFutureView = () => {
         setConfirmModalVisible(false);
-        setShowFuture(true);
+        // Trigger transition animation when showing future hotspots
+        triggerTransition(() => {
+            setShowFuture(true);
+            // Then trigger blink animation
+            setTimeout(() => triggerBlink(), 100);
+        });
     };
 
     const drainageKeys = new Set();
@@ -228,7 +291,6 @@ const MapScreen = ({ navigation }: any) => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#E3F2FD" />
-
             <View style={styles.mapContainer}>
                 <MapView
                     ref={mapRef}
@@ -318,10 +380,40 @@ const MapScreen = ({ navigation }: any) => {
                                 radius={feature.properties.radius_meters || 500}
                                 fillColor={fillColor}
                                 strokeColor={strokeColor}
+                                strokeWidth={isBlinking ? 4 : 2}
+                            />
+                        );
+                    })}
+
+                    {/* Invisible markers for hotspot tap detection */}
+                    {!showFuture && hotspotData?.features?.map((feature: any, index: number) => {
+                        if (feature.geometry.type !== 'Point') return null;
+
+                        return (
+                            <Marker
+                                key={`hs-tap-${feature.properties.id || index}`}
+                                coordinate={{
+                                    latitude: feature.geometry.coordinates[1],
+                                    longitude: feature.geometry.coordinates[0],
+                                }}
+                                opacity={0}
+                                onPress={() => triggerBlink()}
                             />
                         );
                     })}
                 </MapView>
+
+                {/* Transition Overlay */}
+                {isTransitioning && (
+                    <Animated.View
+                        style={[
+                            styles.transitionOverlay,
+                            {
+                                opacity: transitionAnim,
+                            },
+                        ]}
+                    />
+                )}
 
                 {/* Search Bar */}
                 <View style={styles.searchBarContainer}>
@@ -477,6 +569,16 @@ const styles = StyleSheet.create({
     },
     map: {
         flex: 1,
+    },
+    transitionOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'white',
+        zIndex: 1000,
+        pointerEvents: 'none',
     },
     bottomNav: {
         flexDirection: 'row',

@@ -19,6 +19,7 @@ import {
     ActivityIndicator,
     Modal,
     RefreshControl,
+    KeyboardAvoidingView,
 } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import Logo from '../assets/images/Logo.svg';
@@ -78,10 +79,17 @@ const HomeScreen = ({ navigation }: any) => {
         const formattedDate = now.toLocaleDateString('en-GB'); // DD/MM/YYYY
         const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         setDateTime(`${formattedDate} ${formattedTime}`);
-
-        // Fetch Location
-        getLocation();
     }, []);
+
+    // Request location permission only when screen is focused/visible
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            // This runs when the screen comes into focus
+            getLocation();
+        });
+
+        return unsubscribe;
+    }, [navigation]);
 
     const getLocation = async (onComplete?: () => void) => {
         setIsLoadingLocation(true);
@@ -340,7 +348,7 @@ const HomeScreen = ({ navigation }: any) => {
                 lat: lat,
                 lon: lon,
                 address: address,
-                severity: severity.charAt(0).toUpperCase() + severity.slice(1), // "Low" | "Moderate" | "High"
+                severity: severity === 'moderate' ? 'Medium' : severity.charAt(0).toUpperCase() + severity.slice(1), // "Low" | "Medium" | "High"
                 reportType: reportType === 'waterLog' ? 'Water Log' : 'Drainage Block',
                 eventDate: eventDate,
                 eventTime: eventTime,
@@ -388,183 +396,190 @@ const HomeScreen = ({ navigation }: any) => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#E3F2FD" />
-            <ScrollView
-                contentContainerStyle={styles.scrollContainer}
-                showsVerticalScrollIndicator={true}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
+                <ScrollView
+                    contentContainerStyle={styles.scrollContainer}
+                    showsVerticalScrollIndicator={true}
+                    keyboardShouldPersistTaps="handled"
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
+                >
 
-                {/* Header Logo */}
-                <View style={styles.logoContainer}>
-                    <Logo width={120} height={100} />
-                </View>
-
-                {/* Upload Area */}
-                <View style={styles.uploadContainer}>
-                    <TouchableOpacity style={styles.uploadBox} onPress={handleImagePick}>
-                        {selectedImage ? (
-                            <Image source={{ uri: selectedImage }} style={styles.uploadedImage} resizeMode="cover" />
-                        ) : (
-                            <>
-                                <View style={styles.uploadIconCircle}>
-                                    <Svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2F80ED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <Path d="M12 19V5" />
-                                        <Path d="M5 12l7-7 7 7" />
-                                    </Svg>
-                                </View>
-                                <Text style={styles.uploadText}>Report Problem</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                </View>
-
-                {/* GPS Location */}
-                <View style={styles.inputGroup}>
-                    <View style={styles.labelRow}>
-                        <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <Circle cx="12" cy="10" r="3" />
-                        </Svg>
-                        <Text style={styles.label}>GPS Location</Text>
+                    {/* Header Logo */}
+                    <View style={styles.logoContainer}>
+                        <Logo width={120} height={100} />
                     </View>
-                    {isLoadingLocation ? (
-                        <View style={[styles.input, styles.loadingContainer]}>
-                            <ActivityIndicator size="small" color="#5D9CEC" />
-                            <Text style={styles.loadingText}>Fetching location...</Text>
+
+                    {/* Upload Area */}
+                    <View style={styles.uploadContainer}>
+                        <TouchableOpacity style={styles.uploadBox} onPress={handleImagePick}>
+                            {selectedImage ? (
+                                <Image source={{ uri: selectedImage }} style={styles.uploadedImage} resizeMode="cover" />
+                            ) : (
+                                <>
+                                    <View style={styles.uploadIconCircle}>
+                                        <Svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2F80ED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <Path d="M12 19V5" />
+                                            <Path d="M5 12l7-7 7 7" />
+                                        </Svg>
+                                    </View>
+                                    <Text style={styles.uploadText}>Report Problem</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* GPS Location */}
+                    <View style={styles.inputGroup}>
+                        <View style={styles.labelRow}>
+                            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                <Circle cx="12" cy="10" r="3" />
+                            </Svg>
+                            <Text style={styles.label}>GPS Location</Text>
                         </View>
-                    ) : (
+                        {isLoadingLocation ? (
+                            <View style={[styles.input, styles.loadingContainer]}>
+                                <ActivityIndicator size="small" color="#5D9CEC" />
+                                <Text style={styles.loadingText}>Fetching location...</Text>
+                            </View>
+                        ) : (
+                            <TextInput
+                                style={[styles.input, styles.disabledInput]}
+                                value={gpsLocation}
+                                editable={false}
+                                placeholder="Location not found"
+                                multiline
+                            />
+                        )}
+                    </View>
+
+                    {/* Address Field */}
+                    <View style={styles.inputGroup}>
+                        <View style={styles.labelRow}>
+                            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <Path d="M9 22V12h6v10" />
+                            </Svg>
+                            <Text style={styles.label}>Address</Text>
+                        </View>
+                        <TextInput
+                            style={[styles.input, { height: 'auto', minHeight: 60 }]}
+                            value={address}
+                            onChangeText={setAddress}
+                            placeholder="Fetched Address"
+                            multiline
+                            editable={true}
+                        />
+                    </View>
+
+                    {/* Date & Time */}
+                    <View style={styles.inputGroup}>
+                        <View style={styles.labelRow}>
+                            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <Circle cx="12" cy="12" r="10" />
+                                <Path d="M12 6v6l4 2" />
+                            </Svg>
+                            <Text style={styles.label}>Date & Time</Text>
+                        </View>
                         <TextInput
                             style={[styles.input, styles.disabledInput]}
-                            value={gpsLocation}
+                            value={dateTime}
                             editable={false}
-                            placeholder="Location not found"
-                            multiline
+                            placeholder=""
                         />
-                    )}
-                </View>
-
-                {/* Address Field */}
-                <View style={styles.inputGroup}>
-                    <View style={styles.labelRow}>
-                        <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                            <Path d="M9 22V12h6v10" />
-                        </Svg>
-                        <Text style={styles.label}>Address</Text>
                     </View>
-                    <TextInput
-                        style={[styles.input, { height: 'auto', minHeight: 60 }]}
-                        value={address}
-                        onChangeText={setAddress}
-                        placeholder="Fetched Address"
-                        multiline
-                        editable={true}
-                    />
-                </View>
 
-                {/* Date & Time */}
-                <View style={styles.inputGroup}>
-                    <View style={styles.labelRow}>
-                        <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <Circle cx="12" cy="12" r="10" />
-                            <Path d="M12 6v6l4 2" />
-                        </Svg>
-                        <Text style={styles.label}>Date & Time</Text>
-                    </View>
-                    <TextInput
-                        style={[styles.input, styles.disabledInput]}
-                        value={dateTime}
-                        editable={false}
-                        placeholder=""
-                    />
-                </View>
-
-                {/* Radio Buttons (Report Type) */}
-                <View style={styles.radioGroup}>
-                    <TouchableOpacity
-                        style={styles.radioOption}
-                        onPress={() => setReportType('waterLog')}
-                    >
-                        <View style={[styles.radioCircle, reportType === 'waterLog' && styles.radioSelected]}>
-                            {reportType === 'waterLog' && <View style={styles.radioInnerCircle} />}
-                        </View>
-                        <Text style={styles.radioText}>Water Log</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.radioOption}
-                        onPress={() => setReportType('drainageBlock')}
-                    >
-                        <View style={[styles.radioCircle, reportType === 'drainageBlock' && styles.radioSelected]}>
-                            {reportType === 'drainageBlock' && <View style={styles.radioInnerCircle} />}
-                        </View>
-                        <Text style={styles.radioText}>Drainage Block</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Severity */}
-                <View style={styles.inputGroup}>
-                    <View style={styles.labelRow}>
-                        <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                            <Path d="M12 9v4" />
-                            <Path d="M12 17h.01" />
-                        </Svg>
-                        <Text style={styles.label}>Severity</Text>
-                    </View>
+                    {/* Radio Buttons (Report Type) */}
                     <View style={styles.radioGroup}>
-                        <TouchableOpacity style={styles.radioOption} onPress={() => setSeverity('low')}>
-                            <View style={[styles.radioCircle, severity === 'low' && styles.radioSelected]}>
-                                {severity === 'low' && <View style={styles.radioInnerCircle} />}
+                        <TouchableOpacity
+                            style={styles.radioOption}
+                            onPress={() => setReportType('waterLog')}
+                        >
+                            <View style={[styles.radioCircle, reportType === 'waterLog' && styles.radioSelected]}>
+                                {reportType === 'waterLog' && <View style={styles.radioInnerCircle} />}
                             </View>
-                            <Text style={styles.radioText}>Low</Text>
+                            <Text style={styles.radioText}>Water Log</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.radioOption} onPress={() => setSeverity('moderate')}>
-                            <View style={[styles.radioCircle, severity === 'moderate' && styles.radioSelected]}>
-                                {severity === 'moderate' && <View style={styles.radioInnerCircle} />}
+
+                        <TouchableOpacity
+                            style={styles.radioOption}
+                            onPress={() => setReportType('drainageBlock')}
+                        >
+                            <View style={[styles.radioCircle, reportType === 'drainageBlock' && styles.radioSelected]}>
+                                {reportType === 'drainageBlock' && <View style={styles.radioInnerCircle} />}
                             </View>
-                            <Text style={styles.radioText}>Moderate</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.radioOption} onPress={() => setSeverity('high')}>
-                            <View style={[styles.radioCircle, severity === 'high' && styles.radioSelected]}>
-                                {severity === 'high' && <View style={styles.radioInnerCircle} />}
-                            </View>
-                            <Text style={styles.radioText}>High</Text>
+                            <Text style={styles.radioText}>Drainage Block</Text>
                         </TouchableOpacity>
                     </View>
-                </View>
 
-                {/* Description */}
-                <View style={styles.inputGroup}>
-                    <View style={styles.labelRow}>
-                        <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <Path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                        </Svg>
-                        <Text style={styles.label}>Description</Text>
+                    {/* Severity */}
+                    <View style={styles.inputGroup}>
+                        <View style={styles.labelRow}>
+                            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <Path d="M12 9v4" />
+                                <Path d="M12 17h.01" />
+                            </Svg>
+                            <Text style={styles.label}>Severity</Text>
+                        </View>
+                        <View style={styles.radioGroup}>
+                            <TouchableOpacity style={styles.radioOption} onPress={() => setSeverity('low')}>
+                                <View style={[styles.radioCircle, severity === 'low' && styles.radioSelected]}>
+                                    {severity === 'low' && <View style={styles.radioInnerCircle} />}
+                                </View>
+                                <Text style={styles.radioText}>Low</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.radioOption} onPress={() => setSeverity('moderate')}>
+                                <View style={[styles.radioCircle, severity === 'moderate' && styles.radioSelected]}>
+                                    {severity === 'moderate' && <View style={styles.radioInnerCircle} />}
+                                </View>
+                                <Text style={styles.radioText}>Moderate</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.radioOption} onPress={() => setSeverity('high')}>
+                                <View style={[styles.radioCircle, severity === 'high' && styles.radioSelected]}>
+                                    {severity === 'high' && <View style={styles.radioInnerCircle} />}
+                                </View>
+                                <Text style={styles.radioText}>High</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                    <TextInput
-                        style={[styles.input, styles.textArea]}
-                        value={description}
-                        onChangeText={setDescription}
-                        placeholder="Enter Description"
-                        multiline
-                        numberOfLines={4}
-                        textAlignVertical="top"
-                    />
-                </View>
 
-                {/* Submit Button */}
-                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isSubmitting}>
-                    {isSubmitting ? (
-                        <ActivityIndicator size="small" color="#FFF" />
-                    ) : (
-                        <Text style={styles.submitButtonText}>Submit</Text>
-                    )}
-                </TouchableOpacity>
+                    {/* Description */}
+                    <View style={styles.inputGroup}>
+                        <View style={styles.labelRow}>
+                            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <Path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                            </Svg>
+                            <Text style={styles.label}>Description</Text>
+                        </View>
+                        <TextInput
+                            style={[styles.input, styles.textArea]}
+                            value={description}
+                            onChangeText={setDescription}
+                            placeholder="Enter Description"
+                            multiline
+                            numberOfLines={4}
+                            textAlignVertical="top"
+                        />
+                    </View>
 
-            </ScrollView>
+                    {/* Submit Button */}
+                    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isSubmitting}>
+                        {isSubmitting ? (
+                            <ActivityIndicator size="small" color="#FFF" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>Submit</Text>
+                        )}
+                    </TouchableOpacity>
+
+                </ScrollView>
+            </KeyboardAvoidingView>
 
             {/* Bottom Navigation Bar */}
             <View style={styles.bottomNav}>

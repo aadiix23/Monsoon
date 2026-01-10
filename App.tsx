@@ -10,6 +10,7 @@ import LoginScreen from './src/authflow/loginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import MapScreen from './src/screens/MapScreen';
 import LocationAlert from './src/components/LocationAlert';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -67,10 +68,10 @@ function App(): React.JSX.Element {
         if (token) {
           setInitialRoute('Home');
         } else {
-          setInitialRoute('Signup');
+          setInitialRoute('Onboarding');
         }
       } catch (e) {
-        setInitialRoute('Signup');
+        setInitialRoute('Onboarding');
       }
     };
     checkToken();
@@ -88,6 +89,11 @@ function App(): React.JSX.Element {
     <View style={{ flex: 1 }}>
       <NavigationContainer>
         <Stack.Navigator initialRouteName={initialRoute}>
+          <Stack.Screen
+            name="Onboarding"
+            component={OnboardingScreen}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen
             name="Signup"
             component={SignupScreen}

@@ -8,9 +8,11 @@ import {
     SafeAreaView,
     StatusBar,
     ScrollView,
-    ImageBackground,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import Logo from '../assets/images/Logo.svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import axios from 'axios';
 import { API_URL } from '@env';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,7 +30,6 @@ const LoginScreen = ({ navigation }: any) => {
     const [alertMessage, setAlertMessage] = useState('');
 
     const handleGetOtp = () => {
-        // Simulating sending OTP
         if (phone.length < 10) {
             showAlert('error', 'Please enter a valid phone number');
             return;
@@ -61,11 +62,7 @@ const LoginScreen = ({ navigation }: any) => {
     const handleAlertClose = () => {
         setAlertVisible(false);
         if (alertType === 'success') {
-            // Navigate to Home or specific screen
-            navigation.navigate('Home'); // Ensure 'Home' route exists or change as needed.
-            // If Home doesn't exist, maybe it should just stay or go back?
-            // User didn't specify, but usually it's Main App. 
-            // I will leave it as Home for now, user can correct.
+            navigation.navigate('Home');
         }
     };
 
@@ -103,32 +100,38 @@ const LoginScreen = ({ navigation }: any) => {
     };
 
     return (
-        <ImageBackground
-            source={require('../assets/images/homebg.webp')}
-            style={styles.backgroundImage}
-            resizeMode="cover"
-        >
-            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-            <SafeAreaView style={styles.container}>
-                <ScrollView contentContainerStyle={styles.scrollContainer}>
-                    {/* Header Section */}
-                    <View style={styles.headerContainer}>
-                        <View style={styles.logoContainer}>
-                            <Logo width={140} height={140} />
-                        </View>
+        <SafeAreaView style={styles.container}>
+            <StatusBar backgroundColor="#E3F2FD" barStyle="dark-content" />
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            >
+                <ScrollView
+                    contentContainerStyle={styles.scrollContainer}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Header with Logo */}
+                    <View style={styles.headerSection}>
+                        <Logo width={100} height={100} />
+                        <Text style={styles.welcomeText}>Welcome Back</Text>
+                        <Text style={styles.subtitleText}>Sign in to continue tracking monsoon updates</Text>
                     </View>
 
-                    {/* Content Section */}
-                    <View style={styles.contentContainer}>
-                        <Text style={styles.title}>Welcome Back</Text>
-
+                    {/* Form Section - Direct Integration */}
+                    <View style={styles.formSection}>
                         {/* Phone Input */}
-                        <View style={styles.inputContainer}>
-                            <Text style={styles.label}>Phone Number</Text>
-                            <View style={styles.inputWrapper}>
+                        <View style={styles.inputGroup}>
+                            <View style={styles.inputIconWrapper}>
+                                <View style={styles.iconContainer}>
+                                    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5D9CEC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                                    </Svg>
+                                </View>
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Enter Your Contact Number"
+                                    placeholder="Phone Number"
                                     placeholderTextColor="#A0A0A0"
                                     keyboardType="phone-pad"
                                     value={phone}
@@ -140,8 +143,9 @@ const LoginScreen = ({ navigation }: any) => {
                         {/* OTP Section */}
                         {isOtpVisible && (
                             <View style={styles.otpSection}>
+                                <Text style={styles.otpLabel}>Enter Verification Code</Text>
                                 <Text style={styles.otpInfoText}>
-                                    *Input the code has been sent to phone number +91{phone.slice(0, 5)}*****{phone.slice(-2)}
+                                    Code sent to +91 {phone.slice(0, 5)}*****{phone.slice(-2)}
                                 </Text>
                                 <View style={styles.otpContainer}>
                                     {otp.map((digit, index) => (
@@ -174,125 +178,130 @@ const LoginScreen = ({ navigation }: any) => {
 
                         {/* Footer Link */}
                         <View style={styles.footer}>
-                            <Text style={styles.footerText}>New User? </Text>
+                            <Text style={styles.footerText}>Don't have an account? </Text>
                             <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
                                 <Text style={styles.signUpText}>Sign Up</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </ScrollView>
-                <CustomAlert
-                    visible={alertVisible}
-                    type={alertType}
-                    message={alertMessage}
-                    onClose={handleAlertClose}
-                />
-            </SafeAreaView>
-        </ImageBackground>
+            </KeyboardAvoidingView>
+            <CustomAlert
+                visible={alertVisible}
+                type={alertType}
+                message={alertMessage}
+                onClose={handleAlertClose}
+            />
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    backgroundImage: {
-        flex: 1,
-    },
     container: {
         flex: 1,
+        backgroundColor: '#E3F2FD',
     },
     scrollContainer: {
         flexGrow: 1,
-        justifyContent: 'flex-end',
+        paddingBottom: 30,
     },
-    headerContainer: {
+    headerSection: {
         alignItems: 'center',
         paddingTop: 80,
         paddingBottom: 40,
-        flex: 1,
-        justifyContent: 'center',
+        paddingHorizontal: 20,
     },
-    logoContainer: {
-        alignItems: 'center',
+    welcomeText: {
+        fontSize: 32,
+        fontFamily: 'Quicksand-Bold',
+        color: '#102A43',
+        marginTop: 20,
+        marginBottom: 8,
     },
-    contentContainer: {
-        backgroundColor: '#FFFFFF',
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
+    subtitleText: {
+        fontSize: 15,
+        fontFamily: 'Quicksand-Regular',
+        color: '#486581',
+        textAlign: 'center',
+        lineHeight: 22,
+    },
+    formSection: {
         paddingHorizontal: 24,
-        paddingTop: 32,
-        paddingBottom: 40,
+        paddingTop: 20,
+    },
+    inputGroup: {
+        marginBottom: 20,
+    },
+    inputIconWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: '#E1E8ED',
+        paddingHorizontal: 16,
+        height: 60,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: -2,
+            height: 2,
         },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.05,
         shadowRadius: 4,
-        elevation: 5,
+        elevation: 2,
     },
-    title: {
-        fontSize: 28,
-        fontFamily: 'Quicksand-Bold',
-        color: '#334E68',
-        textAlign: 'center',
-        marginBottom: 32,
-    },
-    inputContainer: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 14,
-        color: '#486581',
-        marginBottom: 8,
-        fontFamily: 'Quicksand-Medium',
-        position: 'absolute',
-        top: -10,
-        left: 10,
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 4,
-        zIndex: 1,
-    },
-    inputWrapper: {
-        borderWidth: 1,
-        borderColor: '#D9E2EC',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        height: 50,
-        justifyContent: 'center',
+    iconContainer: {
+        marginRight: 12,
     },
     input: {
-        fontSize: 14,
+        flex: 1,
+        fontSize: 16,
         color: '#102A43',
-        padding: 0,
-        fontFamily: 'Quicksand-Regular',
+        fontFamily: 'Quicksand-Medium',
+        paddingVertical: 0,
     },
     otpSection: {
         marginTop: 10,
         marginBottom: 20,
     },
+    otpLabel: {
+        fontSize: 16,
+        fontFamily: 'Quicksand-Bold',
+        color: '#102A43',
+        marginBottom: 8,
+    },
     otpInfoText: {
-        fontSize: 12,
-        color: '#829AB1',
+        fontSize: 13,
+        color: '#486581',
         fontFamily: 'Quicksand-Regular',
-        marginBottom: 16,
+        marginBottom: 20,
     },
     otpContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
     },
     otpBox: {
-        width: 45,
-        height: 45,
-        borderWidth: 1,
-        borderColor: '#D9E2EC',
-        borderRadius: 8,
+        width: 50,
+        height: 56,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1.5,
+        borderColor: '#E1E8ED',
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     otpInput: {
-        fontSize: 18,
+        fontSize: 22,
         fontFamily: 'Quicksand-Bold',
-        color: '#334E68',
+        color: '#102A43',
         width: '100%',
         height: '100%',
         textAlign: 'center',
@@ -300,11 +309,10 @@ const styles = StyleSheet.create({
     },
     button: {
         backgroundColor: '#5D9CEC',
-        borderRadius: 25,
-        paddingVertical: 16,
+        borderRadius: 16,
+        paddingVertical: 18,
         alignItems: 'center',
-        marginTop: 24,
-        marginBottom: 24,
+        marginTop: 30,
         shadowColor: '#5D9CEC',
         shadowOffset: {
             width: 0,
@@ -312,26 +320,28 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 4,
+        elevation: 6,
     },
     buttonText: {
         color: '#FFFFFF',
         fontSize: 18,
         fontFamily: 'Quicksand-Bold',
+        letterSpacing: 0.5,
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 24,
     },
     footerText: {
-        color: '#829AB1',
-        fontSize: 14,
+        color: '#486581',
+        fontSize: 15,
         fontFamily: 'Quicksand-Regular',
     },
     signUpText: {
         color: '#5D9CEC',
-        fontSize: 14,
+        fontSize: 15,
         fontFamily: 'Quicksand-Bold',
     },
 });
