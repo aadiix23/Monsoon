@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, TextInput, Alert, Keyboard, Platform, PermissionsAndroid, FlatList } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, TextInput, Alert, Keyboard, Platform, PermissionsAndroid, FlatList, Linking, AppState } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker, Circle } from 'react-native-maps';
 import Svg, { Path, Circle as SvgCircle, Rect, Line } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -86,7 +86,35 @@ const MapScreen = ({ navigation }: any) => {
             },
             (error) => {
                 console.log(error.code, error.message);
-                Alert.alert('Error', 'Could not fetch location. Please ensure GPS is on.');
+
+                let errorMessage = 'Could not fetch location.';
+                if (error.code === 1) {
+                    errorMessage = 'Location permission was denied.';
+                } else if (error.code === 2) {
+                    errorMessage = 'Location services are disabled. Please turn on GPS.';
+                } else if (error.code === 3) {
+                    errorMessage = 'Location request timed out.';
+                }
+
+                Alert.alert(
+                    'Location Error',
+                    errorMessage,
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                            text: 'Open Settings',
+                            onPress: () => {
+                                if (Platform.OS === 'ios') {
+                                    Linking.openSettings();
+                                } else {
+                                    Linking.sendIntent('android.settings.LOCATION_SOURCE_SETTINGS').catch(() => {
+                                        Linking.openSettings();
+                                    });
+                                }
+                            }
+                        }
+                    ]
+                );
             },
             { enableHighAccuracy: false, timeout: 20000, maximumAge: 1000 }
         );
