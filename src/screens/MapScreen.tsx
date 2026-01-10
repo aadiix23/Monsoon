@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, TextInput, Alert, Keyboard, Platform, PermissionsAndroid, FlatList, Linking, AppState } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, TextInput, Alert, Keyboard, Platform, PermissionsAndroid, FlatList, Linking, AppState, Modal } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker, Circle } from 'react-native-maps';
 import Svg, { Path, Circle as SvgCircle, Rect, Line } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Geolocation from '@react-native-community/geolocation';
+import { API_URL } from '@env';
 
 const MapScreen = ({ navigation }: any) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [waterLogData, setWaterLogData] = useState<any>(null);
     const [drainageData, setDrainageData] = useState<any>(null);
     const [hotspotData, setHotspotData] = useState<any>(null);
+    const [futureHotspotData, setFutureHotspotData] = useState<any>(null);
+    const [showFuture, setShowFuture] = useState(false);
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const mapRef = useRef<MapView>(null);
 
@@ -21,7 +25,7 @@ const MapScreen = ({ navigation }: any) => {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 };
-                const BASE_URL = 'https://monsoon-backend.onrender.com';
+                const BASE_URL = API_URL;
 
                 // Fetch Water Log
                 try {
@@ -43,6 +47,13 @@ const MapScreen = ({ navigation }: any) => {
                     const hsJson = await hsRes.json();
                     setHotspotData(hsJson);
                 } catch (e) { console.log('Error fetching hotspots', e); }
+
+                // Fetch Future Hotspots
+                try {
+                    const fhsRes = await fetch(`${BASE_URL}/map/future-hotspots`, { headers });
+                    const fhsJson = await fhsRes.json();
+                    setFutureHotspotData(fhsJson);
+                } catch (e) { console.log('Error fetching future hotspots', e); }
 
             } catch (e) {
                 console.log("Error in data fetching setup", e);
@@ -192,6 +203,19 @@ const MapScreen = ({ navigation }: any) => {
         }
     };
 
+    const handleToggleFuture = () => {
+        if (showFuture) {
+            setShowFuture(false);
+        } else {
+            setConfirmModalVisible(true);
+        }
+    };
+
+    const confirmFutureView = () => {
+        setConfirmModalVisible(false);
+        setShowFuture(true);
+    };
+
     const drainageKeys = new Set();
     if (drainageData?.features) {
         drainageData.features.forEach((f: any) => {
@@ -257,21 +281,46 @@ const MapScreen = ({ navigation }: any) => {
                         )
                     ))}
 
-                    {/* Hotspots - Area Circles (Orange/Yellow) */}
-                    {hotspotData?.features?.map((feature: any, index: number) => (
-                        feature.geometry.type === 'Point' && (
+                    {/* Hotspots - Area Circles (Color coded by severity or future prediction) */}
+                    {(showFuture ? futureHotspotData : hotspotData)?.features?.map((feature: any, index: number) => {
+                        if (feature.geometry.type !== 'Point') return null;
+
+                        let fillColor = "rgba(76, 175, 80, 0.4)"; // Default Low (Green)
+                        let strokeColor = "rgba(76, 175, 80, 0.8)";
+
+                        if (showFuture) {
+                            const risk = feature.properties.future_prediction?.toLowerCase();
+                            if (risk?.includes('high')) {
+                                fillColor = "rgba(234, 67, 53, 0.4)"; // Red
+                                strokeColor = "rgba(234, 67, 53, 0.8)";
+                            } else if (risk?.includes('medium')) {
+                                fillColor = "rgba(255, 193, 7, 0.4)"; // Yellow
+                                strokeColor = "rgba(255, 193, 7, 0.8)";
+                            }
+                        } else {
+                            const severity = feature.properties.severity?.toLowerCase();
+                            if (severity === 'high') {
+                                fillColor = "rgba(234, 67, 53, 0.4)"; // Red
+                                strokeColor = "rgba(234, 67, 53, 0.8)";
+                            } else if (severity === 'medium') {
+                                fillColor = "rgba(255, 193, 7, 0.4)"; // Yellow
+                                strokeColor = "rgba(255, 193, 7, 0.8)";
+                            }
+                        }
+
+                        return (
                             <Circle
-                                key={`hs-${feature.properties.id || index}`}
+                                key={`hs-${showFuture ? 'future' : 'current'}-${feature.properties.id || index}`}
                                 center={{
                                     latitude: feature.geometry.coordinates[1],
                                     longitude: feature.geometry.coordinates[0],
                                 }}
-                                radius={500} // radius in meters, adjust 'a little bit larger area'
-                                fillColor="rgba(255, 165, 0, 0.4)" // Orange with opacity
-                                strokeColor="rgba(255, 165, 0, 0.8)"
+                                radius={feature.properties.radius_meters || 500}
+                                fillColor={fillColor}
+                                strokeColor={strokeColor}
                             />
-                        )
-                    ))}
+                        );
+                    })}
                 </MapView>
 
                 {/* Search Bar */}
@@ -351,8 +400,11 @@ const MapScreen = ({ navigation }: any) => {
                 </View>
 
                 {/* Future Button */}
-                <TouchableOpacity style={styles.futureButton}>
-                    <Text style={styles.futureButtonText}>Future</Text>
+                <TouchableOpacity
+                    style={[styles.futureButton, showFuture && { backgroundColor: '#4A89DC' }]}
+                    onPress={handleToggleFuture}
+                >
+                    <Text style={styles.futureButtonText}>{showFuture ? 'Current Hotspots' : 'Future Hotspots'}</Text>
                 </TouchableOpacity>
 
             </View>
@@ -380,6 +432,40 @@ const MapScreen = ({ navigation }: any) => {
                     <Text style={[styles.navText, styles.navTextActive]}>Map</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Confirmation Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={confirmModalVisible}
+                onRequestClose={() => setConfirmModalVisible(false)}
+            >
+                <View style={styles.modalCenteredView}>
+                    <View style={styles.modalView}>
+                        <View style={styles.modalIconContainer}>
+                            <Text style={styles.modalIconText}>?</Text>
+                        </View>
+                        <Text style={styles.modalTitle}>Show Future Hotspots?</Text>
+                        <Text style={styles.modalText}>
+                            This will display predicted rain hotspots based on future forecast data.
+                        </Text>
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalButtonCancel]}
+                                onPress={() => setConfirmModalVisible(false)}
+                            >
+                                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalButtonConfirm]}
+                                onPress={confirmFutureView}
+                            >
+                                <Text style={styles.modalButtonText}>Show Future</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -519,7 +605,7 @@ const styles = StyleSheet.create({
     },
     suggestionsContainer: {
         position: 'absolute',
-        top: 115, // searchBarContainer (50 start + 60 height) + 5 spacing
+        top: 115,
         left: 20,
         right: 20,
         backgroundColor: '#FFF',
@@ -546,6 +632,94 @@ const styles = StyleSheet.create({
     separator: {
         height: 1,
         backgroundColor: '#F0F0F0',
+    },
+    // Modal Styles
+    modalCenteredView: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 35,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+        width: '85%',
+    },
+    modalIconContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+        backgroundColor: '#E3F2FD', // Light Blue 
+    },
+    modalIconText: {
+        fontSize: 30,
+        color: '#5D9CEC',
+        fontFamily: 'Quicksand-Bold',
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontFamily: 'Quicksand-Bold',
+        marginBottom: 15,
+        color: '#102A43',
+        textAlign: 'center',
+    },
+    modalText: {
+        marginBottom: 25,
+        textAlign: 'center',
+        color: '#486581',
+        fontFamily: 'Quicksand-Regular',
+        fontSize: 16,
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 10,
+    },
+    modalButton: {
+        borderRadius: 25,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalButtonConfirm: {
+        backgroundColor: '#5D9CEC',
+        elevation: 2,
+        marginLeft: 10,
+    },
+    modalButtonCancel: {
+        backgroundColor: '#FFF',
+        borderWidth: 1,
+        borderColor: '#5D9CEC',
+        marginRight: 10,
+    },
+    modalButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontFamily: 'Quicksand-Bold',
+        fontSize: 14,
+    },
+    modalButtonTextCancel: {
+        color: '#5D9CEC',
+        fontWeight: 'bold',
+        fontFamily: 'Quicksand-Bold',
+        fontSize: 14,
     },
 });
 

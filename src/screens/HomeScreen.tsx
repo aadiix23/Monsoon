@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchCamera, launchImageLibrary, Asset } from 'react-native-image-picker';
 import Geolocation from '@react-native-community/geolocation';
+import { API_URL } from '@env';
 import {
     View,
     Text,
@@ -24,6 +25,7 @@ import Logo from '../assets/images/Logo.svg';
 
 const HomeScreen = ({ navigation }: any) => {
     const [gpsLocation, setGpsLocation] = useState('');
+    const [address, setAddress] = useState('');
     const [dateTime, setDateTime] = useState('');
     const [reportType, setReportType] = useState<'waterLog' | 'drainageBlock'>('waterLog');
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -119,10 +121,13 @@ const HomeScreen = ({ navigation }: any) => {
                                     );
                                     const data = await response.json();
                                     if (data && data.display_name) {
-                                        locationString += `\n${data.display_name}`;
+                                        setAddress(data.display_name);
+                                    } else {
+                                        setAddress('Address not found');
                                     }
                                 } catch (error) {
                                     console.log('Error fetching address:', error);
+                                    setAddress('Could not fetch address');
                                 }
 
                                 setGpsLocation(locationString);
@@ -295,7 +300,7 @@ const HomeScreen = ({ navigation }: any) => {
             // Using logic from passed instructions to use user provided exact endpoints if needed, but assuming API_URL is valid base.
             // User provided "http://monsoon-backend.onrender.com/uploads..." in example, so likely API_URL is "https://monsoon-backend.onrender.com"
 
-            const BASE_URL = 'https://monsoon-backend.onrender.com';
+            const BASE_URL = API_URL;
 
             const uploadResponse = await fetch(`${BASE_URL}/upload/image`, {
                 method: 'POST',
@@ -334,6 +339,7 @@ const HomeScreen = ({ navigation }: any) => {
             const reportPayload = {
                 lat: lat,
                 lon: lon,
+                address: address,
                 severity: severity.charAt(0).toUpperCase() + severity.slice(1), // "Low" | "Moderate" | "High"
                 reportType: reportType === 'waterLog' ? 'Water Log' : 'Drainage Block',
                 eventDate: eventDate,
@@ -437,6 +443,25 @@ const HomeScreen = ({ navigation }: any) => {
                             multiline
                         />
                     )}
+                </View>
+
+                {/* Address Field */}
+                <View style={styles.inputGroup}>
+                    <View style={styles.labelRow}>
+                        <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <Path d="M9 22V12h6v10" />
+                        </Svg>
+                        <Text style={styles.label}>Address</Text>
+                    </View>
+                    <TextInput
+                        style={[styles.input, { height: 'auto', minHeight: 60 }]}
+                        value={address}
+                        onChangeText={setAddress}
+                        placeholder="Fetched Address"
+                        multiline
+                        editable={true}
+                    />
                 </View>
 
                 {/* Date & Time */}
