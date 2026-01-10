@@ -210,6 +210,8 @@ const MapScreen = ({ navigation }: any) => {
                     ref={mapRef}
                     provider={PROVIDER_GOOGLE}
                     style={styles.map}
+                    showsUserLocation={true}
+                    showsMyLocationButton={false}
                     initialRegion={{
                         latitude: 28.6139,
                         longitude: 77.2090, // Default to New Delhi
@@ -455,11 +457,11 @@ const styles = StyleSheet.create({
     },
     locationFab: {
         position: 'absolute',
-        top: 120, // Positioned below search bar
-        left: 20,
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        bottom: 100, // Positioned above the Future button (30 bottom + ~50 height + 20 spacing)
+        right: 20,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: '#FFF',
         alignItems: 'center',
         justifyContent: 'center',

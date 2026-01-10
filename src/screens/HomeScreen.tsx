@@ -16,7 +16,8 @@ import {
     Image,
     PermissionsAndroid,
     ActivityIndicator,
-    Modal, // Added Modal import
+    Modal,
+    RefreshControl,
 } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import Logo from '../assets/images/Logo.svg';
@@ -29,6 +30,7 @@ const HomeScreen = ({ navigation }: any) => {
     const [isLoadingLocation, setIsLoadingLocation] = useState(true);
     const [severity, setSeverity] = useState<'low' | 'moderate' | 'high'>('low');
     const [description, setDescription] = useState('');
+    const [refreshing, setRefreshing] = useState(false);
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -56,6 +58,18 @@ const HomeScreen = ({ navigation }: any) => {
         setAlertConfig((prev) => ({ ...prev, visible: false }));
     };
 
+    const onRefresh = React.useCallback(() => {
+        setRefreshing(true);
+        // Refresh Time
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('en-GB');
+        const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        setDateTime(`${formattedDate} ${formattedTime}`);
+
+        // Refresh Location
+        getLocation(() => setRefreshing(false));
+    }, []);
+
     useEffect(() => {
         // Set Date and Time
         const now = new Date();
@@ -67,8 +81,13 @@ const HomeScreen = ({ navigation }: any) => {
         getLocation();
     }, []);
 
-    const getLocation = async () => {
+    const getLocation = async (onComplete?: () => void) => {
         setIsLoadingLocation(true);
+        const finish = () => {
+            setIsLoadingLocation(false);
+            if (onComplete) onComplete();
+        };
+
         if (Platform.OS === 'android') {
             try {
                 const granted = await PermissionsAndroid.request(
@@ -107,7 +126,7 @@ const HomeScreen = ({ navigation }: any) => {
                                 }
 
                                 setGpsLocation(locationString);
-                                setIsLoadingLocation(false);
+                                finish();
                             },
                             (error) => {
                                 console.log(`Error (HighAccuracy: ${highAccuracy}):`, error.code, error.message);
@@ -117,7 +136,7 @@ const HomeScreen = ({ navigation }: any) => {
                                     getCurrentPositionHelper(false);
                                 } else {
                                     showAlert('Error', 'Failed to get location. Please ensure GPS is on.', 'error');
-                                    setIsLoadingLocation(false);
+                                    finish();
                                 }
                             },
                             { enableHighAccuracy: highAccuracy, timeout: 20000, maximumAge: 10000 }
@@ -128,14 +147,14 @@ const HomeScreen = ({ navigation }: any) => {
 
                 } else {
                     console.log('Location permission denied');
-                    setIsLoadingLocation(false);
+                    finish();
                 }
             } catch (err) {
                 console.warn(err);
-                setIsLoadingLocation(false);
+                finish();
             }
         } else {
-            setIsLoadingLocation(false);
+            finish();
         }
     };
 
@@ -363,7 +382,13 @@ const HomeScreen = ({ navigation }: any) => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#E3F2FD" />
-            <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={true}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                showsVerticalScrollIndicator={true}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+            >
 
                 {/* Header Logo */}
                 <View style={styles.logoContainer}>
@@ -498,7 +523,7 @@ const HomeScreen = ({ navigation }: any) => {
                         style={[styles.input, styles.textArea]}
                         value={description}
                         onChangeText={setDescription}
-                        placeholder="Lot of water collected on the road due to blockage of drain"
+                        placeholder="Enter Description"
                         multiline
                         numberOfLines={4}
                         textAlignVertical="top"
