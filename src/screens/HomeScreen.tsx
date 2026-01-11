@@ -21,8 +21,10 @@ import {
     RefreshControl,
     KeyboardAvoidingView,
 } from 'react-native';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+
+import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import Logo from '../assets/images/Logo.svg';
+import SideMenu from '../components/SideMenu';
 
 const HomeScreen = ({ navigation }: any) => {
     const [gpsLocation, setGpsLocation] = useState('');
@@ -32,8 +34,73 @@ const HomeScreen = ({ navigation }: any) => {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [isLoadingLocation, setIsLoadingLocation] = useState(true);
     const [severity, setSeverity] = useState<'low' | 'moderate' | 'high'>('low');
+
     const [description, setDescription] = useState('');
     const [refreshing, setRefreshing] = useState(false);
+
+    // Side Menu State
+    const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
+    const [userInfo, setUserInfo] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                // Load from cache first
+                const userString = await AsyncStorage.getItem('userInfo');
+                if (userString) {
+                    setUserInfo(JSON.parse(userString));
+                }
+
+                // Update from API
+                const token = await AsyncStorage.getItem('userToken');
+                if (token) {
+                    const response = await fetch(`${API_URL}/auth/profile`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
+                    if (response.ok) {
+                        const userData = await response.json();
+                        setUserInfo(userData);
+                        await AsyncStorage.setItem('userInfo', JSON.stringify(userData));
+                    } else {
+                        console.log('Failed to fetch user profile');
+                    }
+                }
+            } catch (error) {
+                console.log('Error fetching user info', error);
+            }
+        };
+        fetchUserInfo();
+    }, []);
+
+    const handleLogout = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            if (token) {
+                await fetch(`${API_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }).catch(err => console.log('Logout API failed', err));
+            }
+
+            await AsyncStorage.clear();
+            setIsSideMenuVisible(false);
+            navigation.replace('Login');
+        } catch (error) {
+            console.log('Error clearing async storage', error);
+            // Fallback clear
+            await AsyncStorage.clear();
+            setIsSideMenuVisible(false);
+            navigation.replace('Login');
+        }
+    };
 
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
@@ -410,9 +477,25 @@ const HomeScreen = ({ navigation }: any) => {
                     }
                 >
 
-                    {/* Header Logo */}
-                    <View style={styles.logoContainer}>
-                        <Logo width={120} height={100} />
+                    {/* Header Logo with Hamburger */}
+                    <View style={styles.headerContainer}>
+                        <TouchableOpacity
+                            style={styles.menuButton}
+                            onPress={() => {
+                                console.log('Hamburger pressed');
+                                setIsSideMenuVisible(true);
+                            }}
+                        >
+                            <Svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#102A43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <Line x1="3" y1="12" x2="21" y2="12" />
+                                <Line x1="3" y1="6" x2="21" y2="6" />
+                                <Line x1="3" y1="18" x2="21" y2="18" />
+                            </Svg>
+                        </TouchableOpacity>
+                        <View style={styles.logoWrapper}>
+                            <Logo width={120} height={100} />
+                        </View>
+                        <View style={{ width: 30 }} /> {/* Spacer for centering */}
                     </View>
 
                     {/* Upload Area */}
@@ -673,7 +756,15 @@ const HomeScreen = ({ navigation }: any) => {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+
+
+            <SideMenu
+                visible={isSideMenuVisible}
+                onClose={() => setIsSideMenuVisible(false)}
+                userInfo={userInfo}
+                onLogout={handleLogout}
+            />
+        </SafeAreaView >
     );
 };
 
@@ -686,10 +777,18 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 20,
     },
-    logoContainer: {
+    headerContainer: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 60,
+        justifyContent: 'space-between',
+        marginTop: 20, // Reduced from 60 to make space
         marginBottom: 20,
+    },
+    menuButton: {
+        padding: 5,
+    },
+    logoWrapper: {
+        alignItems: 'center',
     },
     scrollContainer: {
         paddingBottom: 20,

@@ -70,6 +70,7 @@ const SignupScreen = ({ navigation }: any) => {
       const payload = {
         name: name,
         phoneNumber: phone,
+        email: email,
         otp: otpString,
       };
 
