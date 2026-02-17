@@ -57,7 +57,7 @@ const OnboardingScreen = ({ navigation }: any) => {
 
     const skip = () => {
         navigation.replace('Signup');
-        // Or store a flag in AsyncStorage that onboarding is done
+
     };
 
     const handleNext = () => {
@@ -97,9 +97,9 @@ const OnboardingScreen = ({ navigation }: any) => {
                 keyExtractor={(item) => item.id}
             />
 
-            {/* Footer Container including Indicators and Buttons */}
+
             <View style={styles.footer}>
-                {/* Indicators */}
+
                 <View style={styles.indicatorContainer}>
                     {slides.map((_, index) => (
                         <View
@@ -112,7 +112,7 @@ const OnboardingScreen = ({ navigation }: any) => {
                     ))}
                 </View>
 
-                {/* Buttons */}
+
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity onPress={skip}>
                         <Text style={styles.skipText}>Skip</Text>
@@ -132,7 +132,7 @@ const OnboardingScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F0F8FF', // Light blue background similar to screenshots
+        backgroundColor: '#F0F8FF',
     },
     slide: {
         width,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
-        marginTop: 60, // Increased marginTop to move image further down
+        marginTop: 60,
         height: height * 0.5,
         width: width,
     },
@@ -155,14 +155,14 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#2F5979', // Darker blue for title
+        color: '#2F5979',
         textAlign: 'center',
         marginBottom: 15,
         fontFamily: 'Quicksand-Bold',
     },
     description: {
         fontSize: 16,
-        color: '#7B8D9E', // Grayish blue text
+        color: '#7B8D9E',
         textAlign: 'center',
         lineHeight: 24,
         fontFamily: 'Quicksand-Regular',
@@ -182,20 +182,20 @@ const styles = StyleSheet.create({
     indicator: {
         height: 8,
         width: 8,
-        backgroundColor: '#D1E3F6', // Inactive dot color
+        backgroundColor: '#D1E3F6',
         borderRadius: 4,
         marginHorizontal: 4,
     },
     indicatorActive: {
-        backgroundColor: '#5D9CEC', // Active dot color
-        width: 8, // Keep same size or slightly larger if desired, typically active is same size or wider
+        backgroundColor: '#5D9CEC',
+        width: 8,
     },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
-        // Removed paddingHorizontal to push buttons to the edges allowed by footer padding
+
     },
     skipText: {
         fontSize: 16,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Quicksand-Medium',
     },
     nextButton: {
-        backgroundColor: '#6A9BE8', // Primary Blue
+        backgroundColor: '#6A9BE8',
         paddingVertical: 12,
         paddingHorizontal: 30,
         borderRadius: 12,

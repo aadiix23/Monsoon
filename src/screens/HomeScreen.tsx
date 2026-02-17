@@ -13,7 +13,7 @@ import {
     StatusBar,
     ScrollView,
     Platform,
-    Alert, // Keep Alert for now, but replace calls
+    Alert,
     Image,
     PermissionsAndroid,
     ActivityIndicator,
@@ -38,20 +38,20 @@ const HomeScreen = ({ navigation }: any) => {
     const [description, setDescription] = useState('');
     const [refreshing, setRefreshing] = useState(false);
 
-    // Side Menu State
+
     const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
     const [userInfo, setUserInfo] = useState<any>(null);
 
     useEffect(() => {
         const fetchUserInfo = async () => {
             try {
-                // Load from cache first
+
                 const userString = await AsyncStorage.getItem('userInfo');
                 if (userString) {
                     setUserInfo(JSON.parse(userString));
                 }
 
-                // Update from API
+
                 const token = await AsyncStorage.getItem('userToken');
                 if (token) {
                     const response = await fetch(`${API_URL}/auth/profile`, {
@@ -67,11 +67,11 @@ const HomeScreen = ({ navigation }: any) => {
                         setUserInfo(userData);
                         await AsyncStorage.setItem('userInfo', JSON.stringify(userData));
                     } else {
-                        console.log('Failed to fetch user profile');
+
                     }
                 }
             } catch (error) {
-                console.log('Error fetching user info', error);
+
             }
         };
         fetchUserInfo();
@@ -87,15 +87,15 @@ const HomeScreen = ({ navigation }: any) => {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
-                }).catch(err => console.log('Logout API failed', err));
+                }).catch(err => { });
             }
 
             await AsyncStorage.clear();
             setIsSideMenuVisible(false);
             navigation.replace('Login');
         } catch (error) {
-            console.log('Error clearing async storage', error);
-            // Fallback clear
+
+
             await AsyncStorage.clear();
             setIsSideMenuVisible(false);
             navigation.replace('Login');
@@ -108,7 +108,7 @@ const HomeScreen = ({ navigation }: any) => {
         message: string;
         type: 'success' | 'error' | 'info';
         actions?: { text: string; onPress: () => void; style?: 'cancel' | 'default' | 'destructive' }[];
-    }>({
+    }>({ 
         visible: false,
         title: '',
         message: '',
@@ -130,28 +130,28 @@ const HomeScreen = ({ navigation }: any) => {
 
     const onRefresh = React.useCallback(() => {
         setRefreshing(true);
-        // Refresh Time
+
         const now = new Date();
         const formattedDate = now.toLocaleDateString('en-GB');
         const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         setDateTime(`${formattedDate} ${formattedTime}`);
 
-        // Refresh Location
+
         getLocation(() => setRefreshing(false));
     }, []);
 
     useEffect(() => {
-        // Set Date and Time
+
         const now = new Date();
-        const formattedDate = now.toLocaleDateString('en-GB'); // DD/MM/YYYY
+        const formattedDate = now.toLocaleDateString('en-GB');
         const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         setDateTime(`${formattedDate} ${formattedTime}`);
     }, []);
 
-    // Request location permission only when screen is focused/visible
+
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            // This runs when the screen comes into focus
+
             getLocation();
         });
 
@@ -178,7 +178,7 @@ const HomeScreen = ({ navigation }: any) => {
                     },
                 );
                 if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                    // Helper function to get position
+
                     const getCurrentPositionHelper = (highAccuracy: boolean) => {
                         Geolocation.getCurrentPosition(
                             async (position) => {
@@ -201,7 +201,7 @@ const HomeScreen = ({ navigation }: any) => {
                                         setAddress('Address not found');
                                     }
                                 } catch (error) {
-                                    console.log('Error fetching address:', error);
+
                                     setAddress('Could not fetch address');
                                 }
 
@@ -209,10 +209,7 @@ const HomeScreen = ({ navigation }: any) => {
                                 finish();
                             },
                             (error) => {
-                                console.log(`Error (HighAccuracy: ${highAccuracy}):`, error.code, error.message);
                                 if (highAccuracy) {
-                                    // If high accuracy failed, try low accuracy
-                                    console.log('Retrying with low accuracy...');
                                     getCurrentPositionHelper(false);
                                 } else {
                                     showAlert('Error', 'Failed to get location. Please ensure GPS is on.', 'error');
@@ -226,11 +223,11 @@ const HomeScreen = ({ navigation }: any) => {
                     getCurrentPositionHelper(true);
 
                 } else {
-                    console.log('Location permission denied');
+
                     finish();
                 }
             } catch (err) {
-                console.warn(err);
+
                 finish();
             }
         } else {
@@ -284,7 +281,7 @@ const HomeScreen = ({ navigation }: any) => {
     };
 
     const openCamera = async () => {
-        closeAlert(); // Close selection menu
+        closeAlert();
 
         const hasPermission = await requestPermissions();
         if (!hasPermission) {
@@ -312,7 +309,7 @@ const HomeScreen = ({ navigation }: any) => {
     };
 
     const openGallery = async () => {
-        closeAlert(); // Close selection menu
+        closeAlert();
 
         const hasPermission = await requestPermissions();
         if (!hasPermission) {
@@ -354,26 +351,22 @@ const HomeScreen = ({ navigation }: any) => {
         setIsSubmitting(true);
 
         try {
-            // Retrieve Token
+
             const token = await AsyncStorage.getItem('userToken');
             if (!token) {
                 showAlert('Error', 'Session expired, please login again', 'error');
                 setIsSubmitting(false);
-                // Optionally navigate to Login
+
                 return;
             }
 
-            // 1. Upload Image
+
             const formData = new FormData();
             formData.append('image', {
                 uri: selectedImage,
-                type: 'image/jpeg', // Adjust based on actual image type if possible, or assume jpeg
+                type: 'image/jpeg',
                 name: 'upload.jpg',
             });
-
-            // Note: Use environment variable or hardcode for now based on previous context if env not working perfectly in snippets
-            // Using logic from passed instructions to use user provided exact endpoints if needed, but assuming API_URL is valid base.
-            // User provided "http://monsoon-backend.onrender.com/uploads..." in example, so likely API_URL is "https://monsoon-backend.onrender.com"
 
             const BASE_URL = API_URL;
 
@@ -394,8 +387,8 @@ const HomeScreen = ({ navigation }: any) => {
 
             const uploadedImageUrl = uploadResult.imageUrl;
 
-            // 2. Prepare Report Data
-            // Parse Lat/Long
+
+
             const latLongMatch = gpsLocation.match(/Lat: ([0-9.-]+), Long: ([0-9.-]+)/);
             if (!latLongMatch) throw new Error('Invalid location format');
 
@@ -406,16 +399,16 @@ const HomeScreen = ({ navigation }: any) => {
                 throw new Error('Invalid latitude or longitude parsed from GPS location.');
             }
 
-            // Use current time for report (since field is non-editable)
+
             const now = new Date();
-            const eventDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-            const eventTime = now.toTimeString().split(' ')[0].substring(0, 5); // HH:mm
+            const eventDate = now.toISOString().split('T')[0];
+            const eventTime = now.toTimeString().split(' ')[0].substring(0, 5);
 
             const reportPayload = {
                 lat: lat,
                 lon: lon,
                 address: address,
-                severity: severity === 'moderate' ? 'Medium' : severity.charAt(0).toUpperCase() + severity.slice(1), // "Low" | "Medium" | "High"
+                severity: severity === 'moderate' ? 'Medium' : severity.charAt(0).toUpperCase() + severity.slice(1),
                 reportType: reportType === 'waterLog' ? 'Water Log' : 'Drainage Block',
                 eventDate: eventDate,
                 eventTime: eventTime,
@@ -423,9 +416,7 @@ const HomeScreen = ({ navigation }: any) => {
                 description: description
             };
 
-            console.log('Sending Report Payload:', JSON.stringify(reportPayload, null, 2));
 
-            // 3. Submit Report
             const reportResponse = await fetch(`${BASE_URL}/map/report`, {
                 method: 'POST',
                 headers: {
@@ -436,24 +427,24 @@ const HomeScreen = ({ navigation }: any) => {
             });
 
             const reportResult = await reportResponse.json();
-            console.log('Report Response:', reportResult);
+
 
             if (reportResponse.ok) {
                 showAlert('Success', 'Report submitted successfully!', 'success');
-                // Reset form
+
                 setSelectedImage(null);
                 setDescription('');
                 setSeverity('low');
                 setReportType('waterLog');
-                // Optional: Refresh location or date?
+
             } else {
-                // detailed error message from backend
+
                 const errorMessage = reportResult.message || JSON.stringify(reportResult);
                 throw new Error(errorMessage);
             }
 
         } catch (error: any) {
-            console.error(error);
+
             showAlert('Error', error.message || 'Something went wrong', 'error');
         } finally {
             setIsSubmitting(false);
@@ -477,12 +468,12 @@ const HomeScreen = ({ navigation }: any) => {
                     }
                 >
 
-                    {/* Header Logo with Hamburger */}
+
                     <View style={styles.headerContainer}>
                         <TouchableOpacity
                             style={styles.menuButton}
                             onPress={() => {
-                                console.log('Hamburger pressed');
+
                                 setIsSideMenuVisible(true);
                             }}
                         >
@@ -495,10 +486,10 @@ const HomeScreen = ({ navigation }: any) => {
                         <View style={styles.logoWrapper}>
                             <Logo width={120} height={100} />
                         </View>
-                        <View style={{ width: 30 }} /> {/* Spacer for centering */}
+
                     </View>
 
-                    {/* Upload Area */}
+
                     <View style={styles.uploadContainer}>
                         <TouchableOpacity style={styles.uploadBox} onPress={handleImagePick}>
                             {selectedImage ? (
@@ -517,7 +508,7 @@ const HomeScreen = ({ navigation }: any) => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* GPS Location */}
+
                     <View style={styles.inputGroup}>
                         <View style={styles.labelRow}>
                             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -542,7 +533,7 @@ const HomeScreen = ({ navigation }: any) => {
                         )}
                     </View>
 
-                    {/* Address Field */}
+
                     <View style={styles.inputGroup}>
                         <View style={styles.labelRow}>
                             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -561,7 +552,7 @@ const HomeScreen = ({ navigation }: any) => {
                         />
                     </View>
 
-                    {/* Date & Time */}
+
                     <View style={styles.inputGroup}>
                         <View style={styles.labelRow}>
                             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -578,7 +569,7 @@ const HomeScreen = ({ navigation }: any) => {
                         />
                     </View>
 
-                    {/* Radio Buttons (Report Type) */}
+
                     <View style={styles.radioGroup}>
                         <TouchableOpacity
                             style={styles.radioOption}
@@ -601,7 +592,7 @@ const HomeScreen = ({ navigation }: any) => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Severity */}
+
                     <View style={styles.inputGroup}>
                         <View style={styles.labelRow}>
                             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -633,7 +624,7 @@ const HomeScreen = ({ navigation }: any) => {
                         </View>
                     </View>
 
-                    {/* Description */}
+
                     <View style={styles.inputGroup}>
                         <View style={styles.labelRow}>
                             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -652,7 +643,7 @@ const HomeScreen = ({ navigation }: any) => {
                         />
                     </View>
 
-                    {/* Submit Button */}
+
                     <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isSubmitting}>
                         {isSubmitting ? (
                             <ActivityIndicator size="small" color="#FFF" />
@@ -664,13 +655,13 @@ const HomeScreen = ({ navigation }: any) => {
                 </ScrollView>
             </KeyboardAvoidingView>
 
-            {/* Bottom Navigation Bar */}
+
             <View style={styles.bottomNav}>
                 <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
                     <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5D9CEC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <Rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                         <Circle cx="12" cy="12" r="3" />
-                        <Path d="M12 8v8" fill="none" stroke="none" /> {/* Placeholder */}
+
                     </Svg>
                     <Text style={[styles.navText, styles.navTextActive]}>Report</Text>
                 </TouchableOpacity>
@@ -688,7 +679,7 @@ const HomeScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
             </View>
 
-            {/* Custom Alert Modal */}
+
             <Modal
                 transparent={true}
                 visible={alertConfig.visible}
@@ -738,7 +729,7 @@ const HomeScreen = ({ navigation }: any) => {
                                         ]}
                                         onPress={() => {
                                             action.onPress();
-                                            // closeAlert(); // Close alert after action, unless action handles it
+
                                         }}
                                     >
                                         <Text style={[
@@ -771,7 +762,7 @@ const HomeScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#E3F2FD', // Very light blue background
+        backgroundColor: '#E3F2FD',
     },
     content: {
         flex: 1,
@@ -781,7 +772,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginTop: 20, // Reduced from 60 to make space
+        marginTop: 20,
         marginBottom: 20,
     },
     menuButton: {
@@ -828,7 +819,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#888',
         fontWeight: '600',
-        fontFamily: 'Quicksand-Bold', // Assuming font is available
+        fontFamily: 'Quicksand-Bold',
     },
     inputGroup: {
         marginBottom: 20,

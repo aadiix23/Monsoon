@@ -1,0 +1,1 @@
+-rw-r--r--. 1 aadiix aadiix 64700129 2026-02-17T20:01:24 android/app/build/outputs/apk/release/app-universal-release.apk

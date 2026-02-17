@@ -26,7 +26,7 @@ const SignupScreen = ({ navigation }: any) => {
   const [otp, setOtp] = React.useState(['', '', '', '', '', '']);
   const otpRefs = React.useRef<Array<TextInput | null>>([]);
 
-  // Alert State
+
   const [alertVisible, setAlertVisible] = React.useState(false);
   const [alertType, setAlertType] = React.useState<'success' | 'error'>('success');
   const [alertMessage, setAlertMessage] = React.useState('');
@@ -74,16 +74,15 @@ const SignupScreen = ({ navigation }: any) => {
         otp: otpString,
       };
 
-      console.log('Signing up with:', payload);
-      console.log('API URL:', API_URL);
+
 
       const response = await axios.post(`${API_URL}/auth/signup`, payload);
 
-      console.log('Signup success:', response.data);
+
       showAlert('success', 'Account created successfully!');
 
     } catch (error) {
-      console.error('Signup error:', error);
+
       showAlert('error', 'Failed to create account. Please try again.');
     }
   };
@@ -101,16 +100,16 @@ const SignupScreen = ({ navigation }: any) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header with Logo */}
+
           <View style={styles.headerSection}>
             <Logo width={100} height={100} />
             <Text style={styles.welcomeText}>Create Account</Text>
             <Text style={styles.subtitleText}>Join us to report and track monsoon updates</Text>
           </View>
 
-          {/* Form Section - Direct Integration */}
+
           <View style={styles.formSection}>
-            {/* Name Input */}
+
             <View style={styles.inputGroup}>
               <View style={styles.inputIconWrapper}>
                 <View style={styles.iconContainer}>
@@ -129,7 +128,7 @@ const SignupScreen = ({ navigation }: any) => {
               </View>
             </View>
 
-            {/* Email Input */}
+
             <View style={styles.inputGroup}>
               <View style={styles.inputIconWrapper}>
                 <View style={styles.iconContainer}>
@@ -150,7 +149,7 @@ const SignupScreen = ({ navigation }: any) => {
               </View>
             </View>
 
-            {/* Phone Input */}
+
             <View style={styles.inputGroup}>
               <View style={styles.inputIconWrapper}>
                 <View style={styles.iconContainer}>
@@ -174,7 +173,7 @@ const SignupScreen = ({ navigation }: any) => {
               </View>
             </View>
 
-            {/* OTP Input - Conditionally Rendered */}
+
             {isOtpVisible && (
               <View style={styles.otpSection}>
                 <Text style={styles.otpLabel}>Enter Verification Code</Text>
@@ -200,12 +199,12 @@ const SignupScreen = ({ navigation }: any) => {
               </View>
             )}
 
-            {/* Sign Up Button */}
+
             <TouchableOpacity style={styles.button} onPress={handleSignup}>
               <Text style={styles.buttonText}>Create Account</Text>
             </TouchableOpacity>
 
-            {/* Footer Link */}
+
             <View style={styles.footer}>
               <Text style={styles.footerText}>Already have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Login')}>

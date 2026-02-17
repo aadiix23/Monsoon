@@ -24,7 +24,7 @@ const LoginScreen = ({ navigation }: any) => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const otpRefs = React.useRef<Array<TextInput | null>>([]);
 
-    // Alert State
+
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertType, setAlertType] = useState<'success' | 'error'>('success');
     const [alertMessage, setAlertMessage] = useState('');
@@ -79,12 +79,11 @@ const LoginScreen = ({ navigation }: any) => {
                 otp: otpString,
             };
 
-            console.log('Logging in with:', payload);
-            console.log('API URL:', API_URL);
+
 
             const response = await axios.post(`${API_URL}/auth/login`, payload);
 
-            console.log('Login success:', response.data);
+
 
             const { token, user } = response.data;
 
@@ -94,7 +93,7 @@ const LoginScreen = ({ navigation }: any) => {
             showAlert('success', 'Login Successful!');
 
         } catch (error) {
-            console.error('Login error:', error);
+            // console.error('Login error:', error);
             showAlert('error', 'Login failed. Please check your credentials.');
         }
     };
@@ -112,16 +111,16 @@ const LoginScreen = ({ navigation }: any) => {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Header with Logo */}
+
                     <View style={styles.headerSection}>
                         <Logo width={100} height={100} />
                         <Text style={styles.welcomeText}>Welcome Back</Text>
                         <Text style={styles.subtitleText}>Sign in to continue tracking monsoon updates</Text>
                     </View>
 
-                    {/* Form Section - Direct Integration */}
+
                     <View style={styles.formSection}>
-                        {/* Phone Input */}
+
                         <View style={styles.inputGroup}>
                             <View style={styles.inputIconWrapper}>
                                 <View style={styles.iconContainer}>
@@ -140,7 +139,7 @@ const LoginScreen = ({ navigation }: any) => {
                             </View>
                         </View>
 
-                        {/* OTP Section */}
+
                         {isOtpVisible && (
                             <View style={styles.otpSection}>
                                 <Text style={styles.otpLabel}>Enter Verification Code</Text>
@@ -166,7 +165,7 @@ const LoginScreen = ({ navigation }: any) => {
                             </View>
                         )}
 
-                        {/* Action Button */}
+
                         <TouchableOpacity
                             style={styles.button}
                             onPress={isOtpVisible ? handleLogin : handleGetOtp}
@@ -176,7 +175,7 @@ const LoginScreen = ({ navigation }: any) => {
                             </Text>
                         </TouchableOpacity>
 
-                        {/* Footer Link */}
+
                         <View style={styles.footer}>
                             <Text style={styles.footerText}>Don't have an account? </Text>
                             <TouchableOpacity onPress={() => navigation.navigate('Signup')}>

@@ -36,31 +36,31 @@ const MapScreen = ({ navigation }: any) => {
                     const wlRes = await fetch(`${BASE_URL}/map/water-log`, { headers });
                     const wlJson = await wlRes.json();
                     setWaterLogData(wlJson);
-                } catch (e) { console.log('Error fetching water logs', e); }
+                } catch (e) { }
 
                 // Fetch Drainage Block
                 try {
                     const dbRes = await fetch(`${BASE_URL}/map/drainage-block`, { headers });
                     const dbJson = await dbRes.json();
                     setDrainageData(dbJson);
-                } catch (e) { console.log('Error fetching drainage', e); }
+                } catch (e) { }
 
                 // Fetch Hotspots
                 try {
                     const hsRes = await fetch(`${BASE_URL}/map/hotspots`, { headers });
                     const hsJson = await hsRes.json();
                     setHotspotData(hsJson);
-                } catch (e) { console.log('Error fetching hotspots', e); }
+                } catch (e) { }
 
                 // Fetch Future Hotspots
                 try {
                     const fhsRes = await fetch(`${BASE_URL}/map/future-hotspots`, { headers });
                     const fhsJson = await fhsRes.json();
                     setFutureHotspotData(fhsJson);
-                } catch (e) { console.log('Error fetching future hotspots', e); }
+                } catch (e) { }
 
             } catch (e) {
-                console.log("Error in data fetching setup", e);
+
             }
         }
         fetchData();
@@ -84,7 +84,6 @@ const MapScreen = ({ navigation }: any) => {
                     return;
                 }
             } catch (err) {
-                console.warn(err);
                 return;
             }
         }
@@ -100,7 +99,6 @@ const MapScreen = ({ navigation }: any) => {
                 }, 1000);
             },
             (error) => {
-                console.log(error.code, error.message);
 
                 let errorMessage = 'Could not fetch location.';
                 if (error.code === 1) {
@@ -153,7 +151,7 @@ const MapScreen = ({ navigation }: any) => {
             const data = await response.json();
             setSuggestions(data);
         } catch (e) {
-            console.log("Suggestion error", e);
+
         }
     };
 
@@ -202,7 +200,6 @@ const MapScreen = ({ navigation }: any) => {
                 Alert.alert('Not Found', 'Location not found');
             }
         } catch (error) {
-            console.error(error);
             Alert.alert('Error', 'Something went wrong while searching');
         }
     };

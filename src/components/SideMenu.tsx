@@ -32,7 +32,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, userInfo, onLogou
     const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
 
     useEffect(() => {
-        console.log('SideMenu visible changed:', visible);
+
         if (visible) {
             Animated.timing(slideAnim, {
                 toValue: 0,
@@ -61,9 +61,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, userInfo, onLogou
                 <TouchableOpacity style={styles.overlayTouch} onPress={onClose} activeOpacity={1} />
 
                 <Animated.View style={[styles.menuContainer, { transform: [{ translateX: slideAnim }] }]}>
-                    {/* Header Section with Image Background equivalent */}
+
                     <View style={styles.header}>
-                        {/* Close Button */}
+
                         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                             <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <Path d="M18 6L6 18" />
@@ -71,7 +71,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, userInfo, onLogou
                             </Svg>
                         </TouchableOpacity>
 
-                        {/* Profile Info */}
+
                         <View style={styles.profileSection}>
                             <View style={styles.avatarContainer}>
                                 {userInfo?.profileImage ? (
@@ -86,7 +86,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, userInfo, onLogou
                         </View>
                     </View>
 
-                    {/* Content Section */}
+
                     <View style={styles.content}>
                         <Text style={styles.sectionTitle}>Personal Information :-</Text>
 
@@ -106,7 +106,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, userInfo, onLogou
                         </View>
                     </View>
 
-                    {/* Logout Button */}
+
                     <View style={styles.footer}>
                         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
                             <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#486581" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     },
     header: {
         height: 200,
-        backgroundColor: '#A0D2EB', // Sky blue-ish
+        backgroundColor: '#A0D2EB',
         padding: 20,
         justifyContent: 'flex-end',
         position: 'relative',
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#F5F7FA', // Very light grey/blue
+        backgroundColor: '#F5F7FA',
     },
     sectionTitle: {
         fontSize: 18,
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     infoText: {
         marginLeft: 15,
         fontSize: 16,
-        color: '#5D9CEC', // Link color
+        color: '#5D9CEC',
         fontFamily: 'Quicksand-Medium',
     },
     footer: {
@@ -223,11 +223,8 @@ const styles = StyleSheet.create({
     logoutButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center', // Centered based on provided UI, or flex-start? Img shows flex-startish but label 'Logout'
-        // Actually the image shows "Logout" with an icon to the left, positioned generically.
-        // Let's align center for better UX or match the screenshot (left aligned text probably better for list).
-        // Screenshot shows centered "Logout" text? No, it looks like a list item at the bottom.
-        // Wait, screenshot shows "Logout" at the bottom center.
+
+
     },
     logoutText: {
         fontSize: 18,
